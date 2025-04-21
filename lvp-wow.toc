@@ -1,9 +1,8 @@
 ## Interface: 110000
 ## Version: 1.0.0
 ## Title: LVP
-## SavedVariables: data, MythicPlusStatsDB
+## SavedVariables: MythicPlusStatsDB
 ## Notes: Calculates the least valuable player for M+ dungeon runs.
-## Author: Betaguini
+## Author: Panguini
 
-main.lua
 track.lua

@@ -1,4 +1,5 @@
-local addonName, addon = ...
+print("Hello World! from track.lua")
+
 MythicPlusStatsDB = MythicPlusStatsDB or {}
 MythicPlusStatsDB.Stats = MythicPlusStatsDB.Stats or {}
 
