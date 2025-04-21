@@ -1,8 +1,12 @@
-## Interface: 110000
+## Interface: 110100, 110105
+## X-Max-Interface: 110105
+## X-Min-Interface:  11506
+## X-Incompatible-With: 30403
+
 ## Version: 1.0.0
-## Title: LVP
+## Title: |cffcdfdda LVP|r
 ## SavedVariables: MythicPlusStatsDB
-## Notes: Calculates the least valuable player for M+ dungeon runs.
+## Notes: Calculates the least valuable player for Mythic+ dungeon runs.
 ## Author: Panguini
 
-track.lua
+Main.xml

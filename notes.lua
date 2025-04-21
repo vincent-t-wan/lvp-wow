@@ -72,3 +72,13 @@ end
 --- test these events
 --- challenge_mode_start/completed
 --- player_dead
+
+
+
+-- 3d matrix
+
+-- first d - mythic dungeonn id
+-- second d - player id in mythic dungeon
+-- third d - type of statistic (ex. dmg dealt, healign, etc.
+
+-- current considered parameters
