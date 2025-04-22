@@ -4,7 +4,7 @@
 ## X-Incompatible-With: 30403
 
 ## Version: 1.0.0
-## Title: |cffcdfdda LVP|r
+## Title: |cffFFD700 LVP|r
 ## SavedVariables: MythicPlusStatsDB
 ## Notes: Calculates the least valuable player for Mythic+ dungeon runs.
 ## Author: Panguini

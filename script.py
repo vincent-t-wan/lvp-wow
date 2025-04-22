@@ -22,7 +22,7 @@ config = {
   "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
 }
 
-SAVE_FILE_PATH = os.path.expanduser("~/World of Warcraft/_retail_WTF/Account/YOUR_ACCOUNT_NAME/SavedVariables/lvp-wow.lua")
+SAVE_FILE_PATH = os.path.expanduser("~/World of Warcraft/_retail_/Account/YOUR_ACCOUNT_NAME/SavedVariables/lvp-wow.lua")
 COLLECTION_NAME = "mythic_plus_runs"
 CHECK_INTERVAL_SECONDS = 60
 
@@ -38,7 +38,6 @@ def extract_lua_table(lua_path):
     start = content.find("{")
     end = content.rfind("}") + 1
     json_like = content[start:end].replace("=", ":")
-    json_like = json_like.replace("true", "true").replace("false", "false")
     json_like = json_like.replace("nil", "null")
 
     try:
@@ -53,13 +52,13 @@ def background_worker():
     last_uploaded = set()
     while True:
         runs = extract_lua_table(SAVE_FILE_PATH)
+        print(runs)
         new_runs = [json.dumps(run, sort_keys=True) for run in runs if json.dumps(run, sort_keys=True) not in last_uploaded]
         if new_runs:
             for run_str in new_runs:
                 run = json.loads(run_str)
                 db.collection(COLLECTION_NAME).add(run)
                 last_uploaded.add(run_str)
-                ref.push().set(run)
                 print("Uploaded new run:", run.get("dungeonName", "Unknown"))
         time.sleep(CHECK_INTERVAL_SECONDS)
 
