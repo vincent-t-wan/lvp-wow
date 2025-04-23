@@ -4,51 +4,51 @@ from dotenv import load_dotenv
 import os
 import json
 import time
-import threading
-import ctypes
-import sys
 import pyrebase
 
 load_dotenv()
 
 config = {
-  "apiKey": os.getenv("FIREBASE_API_KEY"),
-  "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
-  "databaseURL": os.getenv("FIREBASE_DATABASE_URL"),
-  "projectId": os.getenv("FIREBASE_PROJECT_ID"),
-  "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET"),
-  "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID"),
-  "appId": os.getenv("FIREBASE_APP_ID"),
-  "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
+    "apiKey": os.getenv("FIREBASE_API_KEY"),
+    "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
+    "databaseURL": os.getenv("FIREBASE_DATABASE_URL"),
+    "projectId": os.getenv("FIREBASE_PROJECT_ID"),
+    "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET"),
+    "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID"),
+    "appId": os.getenv("FIREBASE_APP_ID"),
+    "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
 }
+    
+def run(path):
+    print(config)
 
-SAVE_FILE_PATH = os.path.expanduser("~/World of Warcraft/_retail_/Account/YOUR_ACCOUNT_NAME/SavedVariables/lvp-wow.lua")
-COLLECTION_NAME = "mythic_plus_runs"
-CHECK_INTERVAL_SECONDS = 60
+    SAVE_FILE_PATH = os.path.expanduser(path)
+    COLLECTION_NAME = "mythic_plus_runs"
+    CHECK_INTERVAL_SECONDS = 60
 
-firebase = pyrebase.initialize_app(config)
-auth = firebase.auth()
-db = firebase.database()
+    firebase = pyrebase.initialize_app(config)
+    auth = firebase.auth()
+    db = firebase.database()
 
-# --- PARSE LUA SAVEDVARIABLES FILE ---
-def extract_lua_table(lua_path):
-    with open(lua_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    # --- PARSE LUA SAVEDVARIABLES FILE ---
+    def extract_lua_table(lua_path):
+        with open(lua_path, 'r', encoding='utf-8') as f:
+            content = f.read()
 
-    start = content.find("{")
-    end = content.rfind("}") + 1
-    json_like = content[start:end].replace("=", ":")
-    json_like = json_like.replace("nil", "null")
+        print(content)
+        start = content.find("{")
+        end = content.rfind("}") + 1
+        json_like = content[start:end].replace("=", ":")
+        json_like = json_like.replace("nil", "null")
 
-    try:
-        data = json.loads(json_like)
-        return data
-    except Exception as e:
-        print("Failed to parse Lua file:", e)
-        return []
+        try:
+            data = json.loads(json_like)
+            return data
+        except Exception as e:
+            print("Failed to parse Lua file:", e)
+            return []
 
-# --- BACKGROUND WORKER ---
-def background_worker():
+    # --- BACKGROUND WORKER ---
     last_uploaded = set()
     while True:
         runs = extract_lua_table(SAVE_FILE_PATH)
@@ -61,15 +61,3 @@ def background_worker():
                 last_uploaded.add(run_str)
                 print("Uploaded new run:", run.get("dungeonName", "Unknown"))
         time.sleep(CHECK_INTERVAL_SECONDS)
-
-# --- HIDE CONSOLE WINDOW ON WINDOWS ---
-def hide_console():
-    if os.name == 'nt':
-        ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
-
-# --- MAIN ---
-if __name__ == "__main__":
-    hide_console()
-    threading.Thread(target=background_worker, daemon=True).start()
-    while True:
-        time.sleep(9999)  # Keep the app alive

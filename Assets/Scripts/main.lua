@@ -3,7 +3,7 @@ MythicPlusStatsDB.Stats = MythicPlusStatsDB.Stats or {}
 
 local customPrint(msg)
     local prefix = "|cffFFD700LVP>|r "  -- Gold color
-        print(prefix .. msg)
+    print(prefix .. msg)
 
 local totalDamage = 0
 local totalHealing = 0

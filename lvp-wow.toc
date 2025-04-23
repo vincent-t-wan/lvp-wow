@@ -5,7 +5,7 @@
 
 ## Version: 1.0.0
 ## Title: |cffFFD700 LVP|r
-## SavedVariables: MythicPlusStatsDB
+## SavedVariablesPerCharacter: MythicPlusStatsDB
 ## Notes: Calculates the least valuable player for Mythic+ dungeon runs.
 ## Author: Panguini
 

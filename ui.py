@@ -1,10 +1,36 @@
 #!/usr/bin/env python3
 
+import script
+import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+import threading
 
-selected_realm = ""
-character_name = ""
+def find_character_directory(selected_realm, character_name):
+    """
+    Helper function that searches for the directory path starting from:
+    ...\World of Warcraft\_retail_\WTF\Account\selected_realm\character_name
+
+    Returns:
+        str or None: Full path to the character directory if found, else None.
+    """
+    # Locate this script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    print(script_dir)
+
+    # Navigate up to the WoW root folder and then into WTF\Account
+    wow_root = os.path.abspath(os.path.join(script_dir, "..", "..", "..", "WTF"))
+    print(wow_root)
+    target_path = os.path.join(selected_realm, character_name)
+    print(target_path)
+
+    for root, dirs, files in os.walk(wow_root):
+        for dir_name in dirs:
+            full_path = os.path.join(root, dir_name)
+            if full_path.endswith(target_path):
+                return full_path
+
+    return None
 
 realms = [
     "Aegwynn", "Aerie Peak", "Agamaggan", "Aggramar", "Akama", "Alexstrasza", "Alleria", "Altar of Storms",
@@ -41,14 +67,26 @@ realms = [
 ]
 
 def on_submit():
-    selected_realm = realm_var.get()
-    character_name = char_name_var.get()
-    select_frame.pack_forget()
-    run_frame.pack(fill=tk.BOTH,expand=True)
+    selected_realm = realm_var.get().strip()
+    character_name = char_name_var.get().strip()
+    if not character_name:
+        messagebox.showerror("Error", "Character name is required.")
+        return
+    if not selected_realm:
+        messagebox.showerror("Error", "Please select a realm.")
+        return
+    dir = find_character_directory(selected_realm, character_name)
+    if dir != None:
+        print(dir)
+        thread = threading.Thread(target=script.run, args=[dir + "\SavedVariables\lvp-wow.lua"], daemon=True)
+        thread.start()
+        select_frame.pack_forget()
+        run_frame.pack(fill=tk.BOTH,expand=True)
+    else:
+        messagebox.showerror("Error", "Realm/Character path not found.")
 
 def on_back():
-    selected_realm = ""
-    character_name = ""
+    ''' TODO MAKE THREAD EXIT GRACEFULLY '''
     run_frame.pack_forget()
     select_frame.pack(fill=tk.BOTH,expand=True)
 
@@ -60,8 +98,6 @@ select_frame.pack(fill=tk.BOTH,expand=True)
 
 run_frame = tk.Frame(root)
 tk.Label(run_frame, text="Running LVP...").pack(pady=(10, 0))
-tk.Label(run_frame, text="Character: " + character_name).pack(pady=(10, 0))
-tk.Label(run_frame, text="Realm: " + selected_realm).pack(pady=(10, 0))
 back_btn = tk.Button(run_frame, text="Back", command=on_back).pack(pady=(10, 0))
 
 root.title("LVP")

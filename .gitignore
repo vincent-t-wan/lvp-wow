@@ -2,3 +2,5 @@
 build/
 dist/
 script.spec
+script.cpython-39.pyc
+script.cpython-311.pyc
