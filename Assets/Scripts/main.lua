@@ -1,9 +1,10 @@
 MythicPlusStatsDB = MythicPlusStatsDB or {}
 MythicPlusStatsDB.Stats = MythicPlusStatsDB.Stats or {}
 
-local customPrint(msg)
-    local prefix = "|cffFFD700LVP>|r "  -- Gold color
+function customPrint(msg)
+    local prefix = "|cffFFD700LVP|r: "  -- Gold color
     print(prefix .. msg)
+end
 
 local totalDamage = 0
 local totalHealing = 0

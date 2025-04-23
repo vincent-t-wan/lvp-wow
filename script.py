@@ -5,6 +5,7 @@ import os
 import json
 import time
 import pyrebase
+import threading
 
 load_dotenv()
 
@@ -18,6 +19,8 @@ config = {
     "appId": os.getenv("FIREBASE_APP_ID"),
     "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
 }
+
+stop_event = threading.Event()
     
 def run(path):
     print(config)
@@ -50,7 +53,7 @@ def run(path):
 
     # --- BACKGROUND WORKER ---
     last_uploaded = set()
-    while True:
+    while not stop_event.is_set():
         runs = extract_lua_table(SAVE_FILE_PATH)
         print(runs)
         new_runs = [json.dumps(run, sort_keys=True) for run in runs if json.dumps(run, sort_keys=True) not in last_uploaded]
@@ -61,3 +64,14 @@ def run(path):
                 last_uploaded.add(run_str)
                 print("Uploaded new run:", run.get("dungeonName", "Unknown"))
         time.sleep(CHECK_INTERVAL_SECONDS)
+
+def start_thread(path):
+    stop_event.clear()
+    t = threading.Thread(target=run, args=[path], daemon=True)
+    t.start()
+    print("script executing...")
+    return t
+
+def stop_thread():
+    stop_event.set()
+    print("script stopped.")

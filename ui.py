@@ -66,7 +66,10 @@ realms = [
     "Ysera", "Ysondre", "Zangarmarsh", "Zul'jin", "Zuluhed"
 ]
 
+thread_handle = None
+
 def on_submit():
+    global thread_handle
     selected_realm = realm_var.get().strip()
     character_name = char_name_var.get().strip()
     if not character_name:
@@ -78,15 +81,15 @@ def on_submit():
     dir = find_character_directory(selected_realm, character_name)
     if dir != None:
         print(dir)
-        thread = threading.Thread(target=script.run, args=[dir + "\SavedVariables\lvp-wow.lua"], daemon=True)
-        thread.start()
+        if thread_handle is None or not thread_handle.is_alive():
+            thread_handle = script.start_thread(dir + "\SavedVariables\lvp-wow.lua")
         select_frame.pack_forget()
         run_frame.pack(fill=tk.BOTH,expand=True)
     else:
         messagebox.showerror("Error", "Realm/Character path not found.")
 
 def on_back():
-    ''' TODO MAKE THREAD EXIT GRACEFULLY '''
+    script.stop_thread()
     run_frame.pack_forget()
     select_frame.pack(fill=tk.BOTH,expand=True)
 
