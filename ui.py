@@ -83,8 +83,8 @@ def on_submit():
         print(dir)
         if thread_handle is None or not thread_handle.is_alive():
             thread_handle = script.start_thread(dir + "\SavedVariables\lvp-wow.lua")
-        select_frame.pack_forget()
-        run_frame.pack(fill=tk.BOTH,expand=True)
+            select_frame.pack_forget()
+            run_frame.pack(fill=tk.BOTH,expand=True)
     else:
         messagebox.showerror("Error", "Realm/Character path not found.")
 

@@ -1,16 +1,32 @@
 MythicPlusStatsDB = MythicPlusStatsDB or {}
-MythicPlusStatsDB.Stats = MythicPlusStatsDB.Stats or {}
 
 function customPrint(msg)
     local prefix = "|cffFFD700LVP|r: "  -- Gold color
-    print(prefix .. msg)
+    local args = {...}
+    local message = table.concat(args, " ")
+    print(prefix .. message)
 end
 
+-- dungeon ends
 local totalDamage = 0
 local totalHealing = 0
 local totalDamageTaken = 0
 local totalDeaths = 0
 local inMythicDungeon = false
+
+-- dungeon starts
+local characterName = nil
+local characterRealm = nil
+local timeStart = nil
+local className = nil
+local specIndex = nil
+local specName = nil
+local specRole = nil
+
+local dungeonId = nil
+local dungeonLevel = nil
+local dungeonName = nil
+local dungeonSeed = nil
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
@@ -28,36 +44,37 @@ frame:SetScript("OnEvent", function(self, event, ...)
         totalDeaths = 0
         inMythicDungeon = true
 
-        local className = select(2, UnitClass("player"))
-        local specIndex = GetSpecialization()
-        local specName = specIndex and select(2, GetSpecializationInfo(specIndex)) or "Unknown"
-        local specRole = GetSpecializationRole(specIndex)
+        characterName = UnitName("player")
+        characterRealm = GetRealmName()
+        timeStart = date("%Y-%m-%d %H:%M:%S")
+        className = select(2, UnitClass("player"))
+        specIndex = GetSpecialization()
+        specName = specIndex and select(2, GetSpecializationInfo(specIndex)) or "Unknown"
+        specRole = GetSpecializationRole(specIndex)
 
-        local dungeonId = C_ChallengeMode.GetActiveChallengeMapID()
-        local dungeonLevel = C_ChallengeMode.GetActiveKeystoneLevel()
-        local dungeonName = C_ChallengeMode.GetMapUIInfo(dungeonId)
-        local dungeonSeed = C_ChallengeMode.GetSlottedKeystoneInfo()
+        dungeonId = C_ChallengeMode.GetActiveChallengeMapID()
+        dungeonLevel, _, _ = C_ChallengeMode.GetActiveKeystoneInfo()
+        dungeonName = C_ChallengeMode.GetMapUIInfo(dungeonId)
+        dungeonSeed = C_ChallengeMode.GetSlottedKeystoneInfo()
 
-        table.insert(MythicPlusStatsDB.Stats, {
-            type = "dungeon_start",
-            dungeonId = dungeonId,
-            dungeonName = dungeonName,
-            dungeonLevel = dungeonLevel,
-            dungeonSeed = dungeonSeed,
-            time = date("%Y-%m-%d %H:%M:%S"),
-            class = className,
-            spec = specName,
-            role = specRole
-        })
         customPrint("Mythic+ started. Tracking active.")
         customPrint("Class:", className, "| Spec:", specName, "| Role:", specRole)
         customPrint("id:", dungeonId, "| name:", dungeonName, "| level:", dungeonLevel, "| seed:", dungeonSeed)
 
     elseif event == "CHALLENGE_MODE_COMPLETED" then
         inMythicDungeon = false
-        table.insert(MythicPlusStatsDB.Stats, {
-            type = "dungeon_end",
-            time = date("%Y-%m-%d %H:%M:%S"),
+        table.insert(MythicPlusStatsDB, {
+            timeStart = timeStart,
+            name = characterName,
+            realm = characterRealm,
+            dungeonName = dungeonName,
+            dungeonId = dungeonId,
+            dungeonLevel = dungeonLevel,
+            dungeonSeed = dungeonSeed,
+            class = className,
+            spec = specName,
+            role = specRole,
+            timeEnd = date("%Y-%m-%d %H:%M:%S"),
             totalDamage = totalDamage,
             totalHealing = totalHealing,
             totalDamageTaken = totalDamageTaken,

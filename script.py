@@ -6,6 +6,14 @@ import json
 import time
 import pyrebase
 import threading
+import re
+
+def fix_trailing_commas(raw_data: str) -> str:
+    # Remove trailing commas before a closing brace } (inside objects)
+    cleaned = re.sub(r',\s*(\})', r'\1', raw_data)
+    # Remove trailing commas before a closing bracket ] (inside arrays)
+    cleaned = re.sub(r',\s*(\])', r'\1', cleaned)
+    return cleaned
 
 load_dotenv()
 
@@ -30,21 +38,31 @@ def run(path):
     CHECK_INTERVAL_SECONDS = 60
 
     firebase = pyrebase.initialize_app(config)
-    auth = firebase.auth()
     db = firebase.database()
 
     # --- PARSE LUA SAVEDVARIABLES FILE ---
     def extract_lua_table(lua_path):
-        with open(lua_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        print(content)
-        start = content.find("{")
-        end = content.rfind("}") + 1
-        json_like = content[start:end].replace("=", ":")
-        json_like = json_like.replace("nil", "null")
-
         try:
+            with open(lua_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            print(content)
+            start = content.find("{")
+            end = content.rfind("}")
+            json_like_list = list(content)
+            json_like_list[start] = "#"
+            json_like_list[end] = "$"
+            json_like = "".join(json_like_list)
+            print(json_like)
+            json_like = json_like[start:end+1].replace("=", ":")
+            json_like = json_like.replace("nil", "null")
+            json_like = json_like.replace("[", "")
+            json_like = json_like.replace("]", "")
+            json_like = json_like.replace("#", "[")
+            json_like = json_like.replace("$", "]")
+            json_like = fix_trailing_commas(json_like)
+
+            print(json_like)
             data = json.loads(json_like)
             return data
         except Exception as e:
@@ -52,17 +70,21 @@ def run(path):
             return []
 
     # --- BACKGROUND WORKER ---
-    last_uploaded = set()
     while not stop_event.is_set():
         runs = extract_lua_table(SAVE_FILE_PATH)
         print(runs)
-        new_runs = [json.dumps(run, sort_keys=True) for run in runs if json.dumps(run, sort_keys=True) not in last_uploaded]
-        if new_runs:
-            for run_str in new_runs:
-                run = json.loads(run_str)
-                db.collection(COLLECTION_NAME).add(run)
-                last_uploaded.add(run_str)
-                print("Uploaded new run:", run.get("dungeonName", "Unknown"))
+        for entry in runs:
+            key = f"{entry['name']}_{entry['realm']}_{entry['timeStart'].replace(' ', '_').replace(':', '-')}"
+            existing = db.child(COLLECTION_NAME).child(key).get()
+            if existing.val() is None:
+                db.child("mythic_plus_runs").child(key).set(entry)
+                print(f"Uploaded {key}")
+            else:
+                print(f"Already exists: {key}")
+        # if entry not in last_uploaded:
+        #     db.collection(COLLECTION_NAME).add(entry)
+        #     last_uploaded.add(entry)
+        #     print("Uploaded new run:", entry)
         time.sleep(CHECK_INTERVAL_SECONDS)
 
 def start_thread(path):
