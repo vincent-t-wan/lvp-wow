@@ -157,7 +157,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
             SPELL_PERIODIC_DAMAGE = true,
         }
 
-        if abilityDamageEvents[subEvent] and UnitGUID("player") == destGUID then
+        if abilityDamageEvents[subEvent] and destGUID == playerGUID then
             local logEntry = {
                 spell = spellName,
                 source = sourceName,
