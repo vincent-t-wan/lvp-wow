@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 import os
 import json
 import time
-import pyrebase
 import threading
 import re
+import requests
 
 def fix_trailing_commas(raw_data: str) -> str:
     # Remove trailing commas before a closing brace } (inside objects)
@@ -17,29 +17,15 @@ def fix_trailing_commas(raw_data: str) -> str:
 
 load_dotenv()
 
-config = {
-    "apiKey": os.getenv("FIREBASE_API_KEY"),
-    "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
-    "databaseURL": os.getenv("FIREBASE_DATABASE_URL"),
-    "projectId": os.getenv("FIREBASE_PROJECT_ID"),
-    "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET"),
-    "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID"),
-    "appId": os.getenv("FIREBASE_APP_ID"),
-    "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
-}
-
 stop_event = threading.Event()
-    
+
+url = 'http://localhost:5000/upload'
+
 def run(path):
-    print(config)
 
     SAVE_FILE_PATH = os.path.expanduser(path)
     LOCAL_CACHE_FILE = "uploaded_runs.json"
-    COLLECTION_NAME = "mythic_plus_runs"
     CHECK_INTERVAL_SECONDS = 60
-
-    firebase = pyrebase.initialize_app(config)
-    db = firebase.database()
 
     # --- PARSE LUA SAVEDVARIABLES FILE ---
     def extract_lua_table(lua_path):
@@ -80,18 +66,26 @@ def run(path):
     while not stop_event.is_set():
         runs = extract_lua_table(SAVE_FILE_PATH)
         print(runs)
-        updated = False  # Track if we need to save the cache again
+        updated = False
         for entry in runs:
             key = f"{entry['name']}_{entry['realm']}_{entry['timeStart'].replace(' ', '_').replace(':', '-')}"
             if key not in uploaded_cache:
                 uploaded_cache.add(key)
                 updated = True
-                existing = db.child(COLLECTION_NAME).child(key).get()
-                if existing.val() is None:
-                    db.child("mythic_plus_runs").child(key).set(entry)
-                    print(f"Uploaded {key}")
-                else:
-                    print(f"Skipped (already in firebase): {key}")
+                try:
+                    data = {
+                        "key": key,
+                        "entry": entry
+                    }
+                    response = requests.post(url, json=data)
+                    response.raise_for_status()
+                    resp = response.json()
+                    if resp.get("status") == "ok":
+                        print("Send successful!")
+                    else:
+                        print("Unexpected response:", resp)
+                except requests.exceptions.RequestException as e:
+                    print("Send failed:", e)
             else:
                 print(f"Skipped (already in local): {key}")
         if updated:
