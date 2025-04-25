@@ -25,8 +25,9 @@ app = Flask(__name__)
 @app.route('/upload', methods=['POST'])
 def upload():
     data = request.json
-    key = data.key
-    entry = data.entry
+    print(data)
+    key = data['key']
+    entry = data['entry']
     existing = db.child(COLLECTION_NAME).child(key).get()
     if existing.val() is None:
         db.child("mythic_plus_runs").child(key).set(entry)

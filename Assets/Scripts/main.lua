@@ -18,6 +18,7 @@ local totalInterrupts = 0
 -- dungeon starts
 local characterName = nil
 local characterRealm = nil
+local characterItemLevel = nil
 local timeStart = nil
 local className = nil
 local specIndex = nil
@@ -30,6 +31,7 @@ local dungeonName = nil
 local dungeonSeed = nil
 
 local hitLog = {}
+local messagesSent = {}
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
@@ -47,10 +49,13 @@ frame:SetScript("OnEvent", function(self, event, ...)
         totalDeaths = 0
         inMythicDungeon = true
         totalInterrupts = 0
+
         hitLog = {}
+        messagesSent = {}
 
         characterName = UnitName("player")
         characterRealm = GetRealmName()
+        characterIlvl = GetAverageItemLevel()
         timeStart = date("%Y-%m-%d %H:%M:%S")
         className = select(2, UnitClass("player"))
         specIndex = GetSpecialization()
@@ -63,7 +68,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
         dungeonSeed = C_ChallengeMode.GetSlottedKeystoneInfo()
 
         customPrint("Mythic+ started. Tracking active.")
-        customPrint("Class:", className, "| Spec:", specName, "| Role:", specRole)
+        customPrint("Class:", className, "| Spec:", specName, "| Role:", specRole, "| Item Level:", characterIlvl)
         customPrint("id:", dungeonId, "| name:", dungeonName, "| level:", dungeonLevel, "| seed:", dungeonSeed)
 
     elseif event == "CHALLENGE_MODE_COMPLETED" then
@@ -79,13 +84,15 @@ frame:SetScript("OnEvent", function(self, event, ...)
             class = className,
             spec = specName,
             role = specRole,
+            ilvl = characterIlvl,
             timeEnd = date("%Y-%m-%d %H:%M:%S"),
             totalDamage = totalDamage,
             totalHealing = totalHealing,
             totalDamageTaken = totalDamageTaken,
             totalDeaths = totalDeaths,
             totalInterrupts = totalInterrupts,
-            hitLog = hitLog
+            hitLog = hitLog,
+            messagesSent = messagesSent
         })
         customPrint("Mythic+ completed.")
         customPrint("Total damage dealt:", totalDamage)
@@ -166,5 +173,12 @@ frame:SetScript("OnEvent", function(self, event, ...)
         --     }
         --     table.insert(hitLog, logEntry)
         -- end
+
+        -- messages
+        elseif event == "CHAT_MSG_PARTY" then
+            local message, sender, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = ...
+            if sender == characterName then
+                table.insert(messagesSent, {time = date("%Y-%m-%d %H:%M:%S"), message = message})
+                customPrint("Message sent to party:", message)
     end
 end)
