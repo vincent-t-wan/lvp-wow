@@ -151,20 +151,20 @@ frame:SetScript("OnEvent", function(self, event, ...)
             totalInterrupts = totalInterrupts + 1
         end
 
-        -- track what players got hit by
-        local abilityDamageEvents = {
-            SPELL_DAMAGE = true,
-            SPELL_PERIODIC_DAMAGE = true,
-        }
+        -- -- track what players got hit by
+        -- local abilityDamageEvents = {
+        --     SPELL_DAMAGE = true,
+        --     SPELL_PERIODIC_DAMAGE = true,
+        -- }
 
-        if abilityDamageEvents[subEvent] and destGUID == playerGUID then
-            local logEntry = {
-                spell = spellName,
-                source = sourceName,
-                time = currentTime(),
-                amount = amount
-            }
-            table.insert(hitLog, logEntry)
-        end
+        -- if abilityDamageEvents[subEvent] and destGUID == playerGUID then
+        --     local logEntry = {
+        --         spell = spellName,
+        --         source = sourceName,
+        --         time = date("%Y-%m-%d %H:%M:%S"),
+        --         amount = amount
+        --     }
+        --     table.insert(hitLog, logEntry)
+        -- end
     end
 end)

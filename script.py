@@ -8,6 +8,18 @@ import threading
 import re
 import requests
 
+# def convert_lua_array_of_objects_to_json(text):
+#     # Match any block of: { { ... }, { ... }, ... }
+#     # Convert only the *outermost* braces to brackets
+#     # Handles nesting and spacing
+#     def replacer(match):
+#         inner = match.group(1)
+#         return f'[{inner}]'
+
+#     # This regex finds { { <anything> } } patterns with multiple entries
+#     pattern = re.compile(r'\{\s*({\s*.*?\s*})\s*(?:,\s*{\s*.*?\s*})+\s*\}', re.DOTALL)
+#     return re.sub(pattern, lambda m: replacer(m), text)
+
 def fix_trailing_commas(raw_data: str) -> str:
     # Remove trailing commas before a closing brace } (inside objects)
     cleaned = re.sub(r',\s*(\})', r'\1', raw_data)
@@ -48,6 +60,7 @@ def run(path):
             json_like = json_like.replace("#", "[")
             json_like = json_like.replace("$", "]")
             json_like = fix_trailing_commas(json_like)
+            # json_like = convert_lua_array_of_objects_to_json(json_like)
 
             print(json_like)
             data = json.loads(json_like)
