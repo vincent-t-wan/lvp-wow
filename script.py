@@ -34,6 +34,7 @@ def run(path):
     print(config)
 
     SAVE_FILE_PATH = os.path.expanduser(path)
+    LOCAL_CACHE_FILE = "uploaded_runs.json"
     COLLECTION_NAME = "mythic_plus_runs"
     CHECK_INTERVAL_SECONDS = 60
 
@@ -68,23 +69,34 @@ def run(path):
         except Exception as e:
             print("Failed to parse Lua file:", e)
             return []
+    
+    if os.path.exists(LOCAL_CACHE_FILE):
+        with open(LOCAL_CACHE_FILE, "r") as f:
+            uploaded_cache = set(json.load(f))
+    else:
+        uploaded_cache = set()
 
     # --- BACKGROUND WORKER ---
     while not stop_event.is_set():
         runs = extract_lua_table(SAVE_FILE_PATH)
         print(runs)
+        updated = False  # Track if we need to save the cache again
         for entry in runs:
             key = f"{entry['name']}_{entry['realm']}_{entry['timeStart'].replace(' ', '_').replace(':', '-')}"
-            existing = db.child(COLLECTION_NAME).child(key).get()
-            if existing.val() is None:
-                db.child("mythic_plus_runs").child(key).set(entry)
-                print(f"Uploaded {key}")
+            if key not in uploaded_cache:
+                uploaded_cache.add(key)
+                updated = True
+                existing = db.child(COLLECTION_NAME).child(key).get()
+                if existing.val() is None:
+                    db.child("mythic_plus_runs").child(key).set(entry)
+                    print(f"Uploaded {key}")
+                else:
+                    print(f"Skipped (already in firebase): {key}")
             else:
-                print(f"Already exists: {key}")
-        # if entry not in last_uploaded:
-        #     db.collection(COLLECTION_NAME).add(entry)
-        #     last_uploaded.add(entry)
-        #     print("Uploaded new run:", entry)
+                print(f"Skipped (already in local): {key}")
+        if updated:
+            with open(LOCAL_CACHE_FILE, "w") as f:
+                json.dump(list(uploaded_cache), f)
         time.sleep(CHECK_INTERVAL_SECONDS)
 
 def start_thread(path):

@@ -1,6 +1,6 @@
 MythicPlusStatsDB = MythicPlusStatsDB or {}
 
-function customPrint(msg)
+function customPrint(...)
     local prefix = "|cffFFD700LVP|r: "  -- Gold color
     local args = {...}
     local message = table.concat(args, " ")
@@ -13,6 +13,7 @@ local totalHealing = 0
 local totalDamageTaken = 0
 local totalDeaths = 0
 local inMythicDungeon = false
+local totalInterrupts = 0
 
 -- dungeon starts
 local characterName = nil
@@ -27,6 +28,8 @@ local dungeonId = nil
 local dungeonLevel = nil
 local dungeonName = nil
 local dungeonSeed = nil
+
+local hitLog = {}
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
@@ -43,6 +46,8 @@ frame:SetScript("OnEvent", function(self, event, ...)
         totalDamageTaken = 0
         totalDeaths = 0
         inMythicDungeon = true
+        totalInterrupts = 0
+        hitLog = {}
 
         characterName = UnitName("player")
         characterRealm = GetRealmName()
@@ -78,7 +83,9 @@ frame:SetScript("OnEvent", function(self, event, ...)
             totalDamage = totalDamage,
             totalHealing = totalHealing,
             totalDamageTaken = totalDamageTaken,
-            totalDeaths = totalDeaths
+            totalDeaths = totalDeaths,
+            totalInterrupts = totalInterrupts,
+            hitLog = hitLog
         })
         customPrint("Mythic+ completed.")
         customPrint("Total damage dealt:", totalDamage)
@@ -89,7 +96,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and inMythicDungeon then
         local eventInfo = {CombatLogGetCurrentEventInfo()}
         local timestamp, subEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = unpack(eventInfo, 1, 11)
-        local spellID, spellName, spellSchool, amount, overhealing, absorbed, critical
+        local spellID, spellName, spellSchool, amount, overhealing, absorbed, critical = unpack(eventInfo, 12, 18)
 
         local playerGUID = UnitGUID("player")
 
@@ -137,6 +144,27 @@ frame:SetScript("OnEvent", function(self, event, ...)
         -- deaths
         if subEvent == "UNIT_DIED" and destGUID == playerGUID then
             totalDeaths = totalDeaths + 1
+        end
+
+        -- interrupts
+        if subEvent == "SPELL_INTERRUPT" and sourceGUID == playerGUID then
+            totalInterrupts = totalInterrupts + 1
+        end
+
+        -- track what players got hit by
+        local abilityDamageEvents = {
+            SPELL_DAMAGE = true,
+            SPELL_PERIODIC_DAMAGE = true,
+        }
+
+        if abilityDamageEvents[subEvent] and UnitGUID("player") == destGUID then
+            local logEntry = {
+                spell = spellName,
+                source = sourceName,
+                time = currentTime(),
+                amount = amount
+            }
+            table.insert(hitLog, logEntry)
         end
     end
 end)
